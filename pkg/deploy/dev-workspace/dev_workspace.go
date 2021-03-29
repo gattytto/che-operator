@@ -39,7 +39,7 @@ const (
 	DevWorkspaceDeploymentName = "devworkspace-controller-manager"
 
 	DevWorkspaceTemplates    = "/tmp/devworkspace-operator/templates/deployment/openshift/objects"
-	DevWorkspaceCheTemplates = "/tmp/devworkspace-che-operator/templates/deployment/openshift/objects/"
+	DevWorkspaceCheTemplates = "/tmp/devworkspace-che-operator/templates"
 
 	DevWorkspaceServiceAccountFile            = DevWorkspaceTemplates + "/devworkspace-controller-serviceaccount.ServiceAccount.yaml"
 	DevWorkspaceRoleFile                      = DevWorkspaceTemplates + "/devworkspace-controller-leader-election-role.Role.yaml"
@@ -56,18 +56,9 @@ const (
 	DevWorkspaceConfigMapFile                 = DevWorkspaceTemplates + "/devworkspace-controller-configmap.ConfigMap.yaml"
 	DevWorkspaceDeploymentFile                = DevWorkspaceTemplates + "/devworkspace-controller-manager.Deployment.yaml"
 
-	DevWorkspaceCheServiceAccountFile           = DevWorkspaceCheTemplates + "/devworkspace-che-serviceaccount.ServiceAccount.yaml"
-	DevWorkspaceCheRoleFile                     = DevWorkspaceCheTemplates + "/devworkspace-che-leader-election-role.Role.yaml"
-	DevWorkspaceCheClusterRoleFile              = DevWorkspaceCheTemplates + "/devworkspace-che-role.ClusterRole.yaml"
-	DevWorkspaceCheProxyClusterRoleFile         = DevWorkspaceCheTemplates + "/devworkspace-che-proxy-role.ClusterRole.yaml"
-	DevWorkspaceCheMetricsReaderClusterRoleFile = DevWorkspaceCheTemplates + "/devworkspace-che-metrics-reader.ClusterRole.yaml"
-	DevWorkspaceCheRoleBindingFile              = DevWorkspaceCheTemplates + "/devworkspace-che-leader-election-rolebinding.RoleBinding.yaml"
-	DevWorkspaceCheClusterRoleBindingFile       = DevWorkspaceCheTemplates + "/devworkspace-che-rolebinding.ClusterRoleBinding.yaml"
-	DevWorkspaceCheProxyClusterRoleBindingFile  = DevWorkspaceCheTemplates + "/devworkspace-che-proxy-rolebinding.ClusterRoleBinding.yaml"
-	DevWorkspaceCheManagersCRDFile              = DevWorkspaceCheTemplates + "/chemanagers.che.eclipse.org.CustomResourceDefinition.yaml"
-	DevWorkspaceCheConfigMapFile                = DevWorkspaceCheTemplates + "/devworkspace-che-configmap.ConfigMap.yaml"
-	DevWorkspaceCheDeploymentFile               = DevWorkspaceCheTemplates + "/devworkspace-che-manager.Deployment.yaml"
-	DevWorkspaceCheMetricsServiceFile           = DevWorkspaceCheTemplates + "/devworkspace-che-controller-manager-metrics-service.Service.yaml"
+	DevWorkspaceCheManagersCRDFile    = DevWorkspaceCheTemplates + "/chemanagers.che.eclipse.org.CustomResourceDefinition.yaml"
+	DevWorkspaceCheConfigMapFile      = DevWorkspaceCheTemplates + "/devworkspace-che-configmap.ConfigMap.yaml"
+	DevWorkspaceCheMetricsServiceFile = DevWorkspaceCheTemplates + "/devworkspace-che-controller-manager-metrics-service.Service.yaml"
 
 	WebTerminalOperatorSubscriptionName = "web-terminal"
 	WebTerminalOperatorNamespace        = "openshift-operators"
@@ -95,24 +86,23 @@ var (
 	}
 
 	syncDwCheItems = []func(*deploy.DeployContext) (bool, error){
-		createDwCheNamespace,
-		syncDwCheServiceAccount,
-		syncDwCheClusterRole,
-		syncDwCheProxyClusterRole,
-		syncDwCheMetricsClusterRole,
-		syncDwCheLeaderRole,
-		syncDwCheLeaderRoleBinding,
-		syncDwCheProxyRoleBinding,
-		syncDwCheRoleBinding,
 		syncDwCheCRD,
 		synDwCheCR,
 		syncDwCheConfigMap,
 		syncDwCheMetricsService,
-		synDwCheDeployment,
 	}
 )
 
 func ReconcileDevWorkspace(deployContext *deploy.DeployContext) (bool, error) {
+	for _, syncItem := range syncDwCheItems {
+		done, err := syncItem(deployContext)
+		if !util.IsTestMode() {
+			if !done {
+				return false, err
+			}
+		}
+	}
+
 	if !util.IsOpenShift4 || !util.IsOAuthEnabled(deployContext.CheCluster) {
 		return true, nil
 	}
@@ -142,15 +132,6 @@ func ReconcileDevWorkspace(deployContext *deploy.DeployContext) (bool, error) {
 	} else {
 		if err := checkWebTerminalSubscription(deployContext); err != nil {
 			return false, err
-		}
-	}
-
-	for _, syncItem := range syncDwCheItems {
-		done, err := syncItem(deployContext)
-		if !util.IsTestMode() {
-			if !done {
-				return false, err
-			}
 		}
 	}
 
@@ -247,53 +228,6 @@ func syncDwDeployment(deployContext *deploy.DeployContext) (bool, error) {
 	return syncObject(deployContext, DevWorkspaceDeploymentFile, &appsv1.Deployment{})
 }
 
-func createDwCheNamespace(deployContext *deploy.DeployContext) (bool, error) {
-	namespace := &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Namespace",
-			APIVersion: corev1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: DevWorkspaceCheNamespace,
-		},
-		Spec: corev1.NamespaceSpec{},
-	}
-
-	return deploy.CreateIfNotExists(deployContext, namespace)
-}
-
-func syncDwCheServiceAccount(deployContext *deploy.DeployContext) (bool, error) {
-	return syncObject(deployContext, DevWorkspaceCheServiceAccountFile, &corev1.ServiceAccount{})
-}
-
-func syncDwCheClusterRole(deployContext *deploy.DeployContext) (bool, error) {
-	return syncObject(deployContext, DevWorkspaceCheClusterRoleFile, &rbacv1.ClusterRole{})
-}
-
-func syncDwCheProxyClusterRole(deployContext *deploy.DeployContext) (bool, error) {
-	return syncObject(deployContext, DevWorkspaceCheProxyClusterRoleFile, &rbacv1.ClusterRole{})
-}
-
-func syncDwCheMetricsClusterRole(deployContext *deploy.DeployContext) (bool, error) {
-	return syncObject(deployContext, DevWorkspaceCheMetricsReaderClusterRoleFile, &rbacv1.ClusterRole{})
-}
-
-func syncDwCheLeaderRole(deployContext *deploy.DeployContext) (bool, error) {
-	return syncObject(deployContext, DevWorkspaceCheRoleFile, &rbacv1.Role{})
-}
-
-func syncDwCheLeaderRoleBinding(deployContext *deploy.DeployContext) (bool, error) {
-	return syncObject(deployContext, DevWorkspaceCheRoleBindingFile, &rbacv1.RoleBinding{})
-}
-
-func syncDwCheProxyRoleBinding(deployContext *deploy.DeployContext) (bool, error) {
-	return syncObject(deployContext, DevWorkspaceCheProxyClusterRoleBindingFile, &rbacv1.ClusterRoleBinding{})
-}
-
-func syncDwCheRoleBinding(deployContext *deploy.DeployContext) (bool, error) {
-	return syncObject(deployContext, DevWorkspaceCheClusterRoleBindingFile, &rbacv1.ClusterRoleBinding{})
-}
-
 func syncDwCheCRD(deployContext *deploy.DeployContext) (bool, error) {
 	return syncObject(deployContext, DevWorkspaceCheManagersCRDFile, &apiextensionsv1.CustomResourceDefinition{})
 }
@@ -342,10 +276,6 @@ func synDwCheCR(deployContext *deploy.DeployContext) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func synDwCheDeployment(deployContext *deploy.DeployContext) (bool, error) {
-	return syncObject(deployContext, DevWorkspaceCheDeploymentFile, &appsv1.Deployment{})
 }
 
 func syncObject(deployContext *deploy.DeployContext, yamlFile string, obj interface{}) (bool, error) {
