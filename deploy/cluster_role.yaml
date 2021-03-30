@@ -468,7 +468,7 @@ rules:
     verbs:
       - '*'
 # devworkspace requirements: devworkspace-controller-view-workspaces cluster roles
-- apiGroups:
+  - apiGroups:
     - workspace.devfile.io
   resources:
     - devworkspaces
