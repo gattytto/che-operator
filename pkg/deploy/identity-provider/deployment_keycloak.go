@@ -546,7 +546,7 @@ func GetSpecKeycloakDeployment(
 	}
 
 	command := bashFunctions + "\n" + addCertToTrustStoreCommand + addProxyCliCommand + applyProxyCliCommand + " && " + changeConfigCommand + enableFixedHostNameProvider +
-		" && if [ -n $(echo \"$(ip -6 route list | awk '$1 == \"default\" {print $5}')\" |head -1) ]; then /opt/jboss/docker-entrypoint.sh --debug -b ::/0 -c standalone.xml; else /opt/jboss/docker-entrypoint.sh --debug -b 0.0.0.0 -c standalone.xml; fi;"
+		" && if [ -n $(echo \"$(cat /proc/net/if_inet6 | awk '$6 != \"lo\" {print $6}')\" |head -1) ]; then /opt/jboss/docker-entrypoint.sh --debug -b ::/0 -c standalone.xml; else /opt/jboss/docker-entrypoint.sh --debug -b 0.0.0.0 -c standalone.xml; fi;"
 	command += " -Dkeycloak.profile.feature.token_exchange=enabled -Dkeycloak.profile.feature.admin_fine_grained_authz=enabled"
 	if cheFlavor == "codeready" {
 		addUsernameReadonlyTheme := "baseTemplate=/opt/eap/themes/base/login/login-update-profile.ftl" +
