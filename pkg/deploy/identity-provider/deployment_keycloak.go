@@ -546,8 +546,8 @@ func GetSpecKeycloakDeployment(
 	}
 
 	command := bashFunctions + "\n" + addCertToTrustStoreCommand + addProxyCliCommand + applyProxyCliCommand + " && " + changeConfigCommand + enableFixedHostNameProvider +
-		" && if [ -n $(echo \"$(cat /proc/net/if_inet6 | awk '$6 != \"lo\" {print $6}')\" |head -1) ]; then /opt/jboss/docker-entrypoint.sh --debug -b [::1] -c standalone.xml; else /opt/jboss/docker-entrypoint.sh --debug -b 0.0.0.0 -c standalone.xml; fi;"
-	command += " -Djava.net.preferIPv4Stack=false -Dkeycloak.profile.feature.token_exchange=enabled -Dkeycloak.profile.feature.admin_fine_grained_authz=enabled"
+		" && if [ -n $(echo \"$(cat /proc/net/if_inet6 | awk '$6 != \"lo\" {print $6}')\" |head -1) ]; then BIND=\"[::1]\" /opt/jboss/docker-entrypoint.sh --debug -b [::1] -c standalone.xml -Djava.net.preferIPv4Stack=false -Dkeycloak.profile.feature.token_exchange=enabled -Dkeycloak.profile.feature.admin_fine_grained_authz=enabled -Djava.net.preferIPv6Addresses=true ; else /opt/jboss/docker-entrypoint.sh --debug -b 0.0.0.0 -c standalone.xml -Dkeycloak.profile.feature.token_exchange=enabled -Dkeycloak.profile.feature.admin_fine_grained_authz=enabled; fi;"
+	
 	if cheFlavor == "codeready" {
 		addUsernameReadonlyTheme := "baseTemplate=/opt/eap/themes/base/login/login-update-profile.ftl" +
 			" && readOnlyTemplateDir=/opt/eap/themes/codeready-username-readonly/login" +
