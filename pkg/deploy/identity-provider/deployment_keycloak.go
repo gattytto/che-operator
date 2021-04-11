@@ -549,7 +549,7 @@ func GetSpecKeycloakDeployment(
 		" && if [ -n $(echo \"$(cat /proc/net/if_inet6 | awk '$6 != \"lo\" {print $6}')\" |head -1) ];" + 
 		" then" + 
 		" sed -i \"s/127\\.0\\.0\\.1/[\\:\\:1]/g\" /opt/jboss/keycloak/standalone/configuration/standalone.xml" +
-		" && sed -i \"s/\"java.net.preferIPv4Stack\"\ value=\"true\"/\"java.net.preferIPv4Stack\"\ value=\"false\"/g\" /opt/jboss/keycloak/domain/configuration/domain.xml" +
+		" && sed -i \"s/\"java.net.preferIPv4Stack\"\\ value=\"true\"/\"java.net.preferIPv4Stack\"\\ value=\"false\"/g\" /opt/jboss/keycloak/domain/configuration/domain.xml" +
 		" && sed -i \"s/230\\.0\\.0\\.4/ff00\\:\\:e600\\:0/g\" /opt/jboss/keycloak/domain/configuration/domain.xml" +
 		" && BIND=\"[::1]\" /opt/jboss/docker-entrypoint.sh --debug -b [::1] -c standalone.xml -Djava.net.preferIPv4Stack=false" +
 		" -Dkeycloak.profile.feature.token_exchange=enabled -Dkeycloak.profile.feature.admin_fine_grained_authz=enabled" +
