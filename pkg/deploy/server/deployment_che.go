@@ -176,7 +176,11 @@ func GetSpecCheDeployment(deployContext *deploy.DeployContext) (*appsv1.Deployme
 
 	cheImageAndTag := GetFullCheServerImageLink(deployContext.CheCluster)
 	pullPolicy := corev1.PullPolicy(util.GetValue(string(deployContext.CheCluster.Spec.Server.CheImagePullPolicy), deploy.DefaultPullPolicyFromDockerImage(cheImageAndTag)))
-
+	
+	command := "if [ -n $(echo \"$(cat /proc/net/if_inet6 | awk '$6 != \"lo\" {print $6}')\" |head -1) ] && [ -z $(echo $KUBERNETES_SERVICE_HOST |grep \"\\[\" |grep \"\\]\") ]; then export KUBERNETES_SERVICE_HOST=\"[$KUBERNETES_SERVICE_HOST]\"; fi;"
+	
+	args := []string{"-c", command}
+	
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -206,6 +210,10 @@ func GetSpecCheDeployment(deployContext *deploy.DeployContext) (*appsv1.Deployme
 						{
 							Name:            cheFlavor,
 							ImagePullPolicy: pullPolicy,
+							Command: []string{
+								"/bin/sh",
+							},
+							Args: args,
 							Image:           cheImageAndTag,
 							Ports: []corev1.ContainerPort{
 								{
