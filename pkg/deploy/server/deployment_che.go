@@ -177,7 +177,15 @@ func GetSpecCheDeployment(deployContext *deploy.DeployContext) (*appsv1.Deployme
 	cheImageAndTag := GetFullCheServerImageLink(deployContext.CheCluster)
 	pullPolicy := corev1.PullPolicy(util.GetValue(string(deployContext.CheCluster.Spec.Server.CheImagePullPolicy), deploy.DefaultPullPolicyFromDockerImage(cheImageAndTag)))
 	
-	command := "if [ -n $(echo \"$(cat /proc/net/if_inet6 | awk '$6 != \"lo\" {print $6}')\" |head -1) ] && [ -z $(echo $KUBERNETES_SERVICE_HOST |grep \"\\[\" |grep \"\\]\") ]; then KUBERNETES_SERVICE_HOST=\"[$KUBERNETES_SERVICE_HOST]\" /entrypoint.sh; fi;"
+	command := "if [ -n $(echo \"$(cat /proc/net/if_inet6 | awk '$6 != \"lo\" {print $6}')\" |head -1) ]" +
+		" && [ -z $(echo $KUBERNETES_SERVICE_HOST |grep \"\\[\" |grep \"\\]\") ]; then"+
+			" echo \"using v6\" &&" +
+			" CHE_HOST_PORT_8080_TCP_ADDR=\"[$CHE_HOST_PORT_8080_TCP_ADDR]\"" +
+			" KUBERNETES_SERVICE_HOST=\"[$KUBERNETES_SERVICE_HOST]\"" +
+			" CHE_HOST_PORT_8087_TCP_ADDR=\"[$CHE_HOST_PORT_8087_TCP_ADDR]\"" +
+			" CHE_HOST_SERVICE_HOST=\"[$CHE_HOST_SERVICE_HOST]\"" +
+			" /entrypoint.sh;" +
+		" fi;"
 	
 	args := []string{"-c", command}
 	
