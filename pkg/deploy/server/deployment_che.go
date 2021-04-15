@@ -177,7 +177,7 @@ func GetSpecCheDeployment(deployContext *deploy.DeployContext) (*appsv1.Deployme
 	cheImageAndTag := GetFullCheServerImageLink(deployContext.CheCluster)
 	pullPolicy := corev1.PullPolicy(util.GetValue(string(deployContext.CheCluster.Spec.Server.CheImagePullPolicy), deploy.DefaultPullPolicyFromDockerImage(cheImageAndTag)))
 	
-	command := "if [ -n $(echo \"$(cat /proc/net/if_inet6 | awk '$6 != \"lo\" {print $6}')\" |head -1) ] && [ -z $(echo $KUBERNETES_SERVICE_HOST |grep \"[\" |grep \"]\") ]; then export KUBERNETES_SERVICE_HOST=\"[$KUBERNETES_SERVICE_HOST]\"; fi && /entrypoint.sh"
+	command := "if [ -n $(echo \"$(cat /proc/net/if_inet6 | awk '$6 != \"lo\" {print $6}')\" |head -1) ] && [ -z $(echo $KUBERNETES_SERVICE_HOST |grep \"\\[\" |grep \"\\]\") ]; then export KUBERNETES_SERVICE_HOST=\"[$KUBERNETES_SERVICE_HOST]\"; fi && /entrypoint.sh"
 	
 	args := []string{"-c", command}
 	
